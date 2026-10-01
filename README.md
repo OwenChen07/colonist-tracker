@@ -26,10 +26,10 @@ Buttons: **⟳** re-reads the whole log, **⚙** sets which player is you, hides
 
 ## Dice odds
 
-Below the table, **Next roll** shows the chance of each number on the next roll, and who is
-rolling it. The thin line on each bar marks normal two-dice odds. Hover a bar for the exact
-percentage, how often that number has come up, and how many of its cards are left in the deck.
-Click the heading to collapse the section.
+Below the table, **Next roll** lists every number from most to least likely on the next roll,
+and says who is rolling it. Green percentages are well above normal two-dice odds, amber well
+below. Hover a number for the exact percentage, the normal odds, how often it has come up and how
+many of its cards are left in the deck. Click the heading to collapse the section.
 
 colonist.io uses "balanced dice" by default. It doesn't roll two dice; it draws from a deck
 of the 36 dice combinations and then adjusts the odds. The tracker follows that deck from the

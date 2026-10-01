@@ -92,18 +92,17 @@
   .dtitle b { color: #1f2328; font-weight: 650; }
   .dbadge { font-size: 10px; line-height: 15px; padding: 0 6px; border-radius: 8px; background: #e8f3ec; color: #24704a; cursor: help; }
   .dbadge.rnd { background: #fff1d6; color: #9a5800; }
-  .dchart { display: flex; justify-content: center; gap: 3px; padding: 2px 0 0; }
-  .dcol { width: 24px; display: flex; flex-direction: column; align-items: center; cursor: help; }
-  .dpct { font-size: 9.5px; line-height: 12px; color: #6b7280; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .dpct.up { color: #24704a; font-weight: 650; }
-  .dpct.down { color: #a16207; }
-  .dbarwrap { position: relative; width: 16px; display: flex; align-items: flex-end; }
-  .dbar { width: 100%; background: #b88a4a; border-radius: 3px 3px 1px 1px; }
-  .dstd { position: absolute; left: -3px; right: -3px; height: 0; border-top: 1.5px solid rgba(31, 35, 40, 0.55); }
-  .dcol.seven .dbar { background: #d0392b; }
-  .dcol.zero .dpct, .dcol.zero .dnum { color: #c4c8cf; }
-  .dnum { font-size: 11px; font-weight: 650; color: #374151; padding-top: 2px; font-variant-numeric: tabular-nums; }
-  .dcol.seven .dnum { color: #c0392b; }
+  .dlist { display: flex; flex-wrap: wrap; gap: 4px; padding: 2px 0 0; }
+  .dit { display: inline-flex; align-items: baseline; gap: 5px; padding: 2px 7px; border-radius: 6px;
+         background: #f6f1e6; border: 1px solid #ece4d3; cursor: help; font-variant-numeric: tabular-nums; }
+  .dit.top { background: #fff; border-color: #d9cdb3; }
+  .dit .dn { font-size: 12px; font-weight: 700; color: #1f2328; }
+  .dit .dp { font-size: 11px; color: #4b5563; }
+  .dit .dp.up { color: #24704a; font-weight: 650; }
+  .dit .dp.down { color: #a16207; }
+  .dit.seven .dn { color: #c0392b; }
+  .dit.zero { background: transparent; border-color: transparent; padding-left: 4px; padding-right: 4px; }
+  .dit.zero .dn, .dit.zero .dp { color: #c4c8cf; font-weight: 500; }
   .dfoot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; padding-top: 5px; font-size: 10.5px; color: #6b7280; }
   .d7 { display: inline-flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
   .d7l { color: #c0392b; font-weight: 650; }
@@ -367,28 +366,22 @@
         </div>`;
       if (!open) return head;
 
-      const max = Math.max(0.17, ...d.odds);
-      const H = 46;
-      const cols = d.odds.map((p, i) => {
+      const fmt = (p) => (p === 0 ? '0%' : p >= 0.0995 ? Math.round(p * 100) + '%' : (p * 100).toFixed(1).replace(/\.0$/, '') + '%');
+      const order = d.odds
+        .map((p, i) => ({ p, i }))
+        .sort((a, b) => (Math.abs(b.p - a.p) > 1e-12 ? b.p - a.p : a.i - b.i));
+      const topP = order[0] ? order[0].p : 0;
+      const items = order.map(({ p, i }) => {
         const t = i + 2;
         const std = d.standard[i];
-        const h = Math.round((p / max) * H);
-        const sh = Math.round((std / max) * H);
-        const pct = p >= 0.0995 ? Math.round(p * 100) + '' : p > 0 ? (p * 100).toFixed(1).replace(/\.0$/, '') : '0';
         const rel = p > std * 1.15 ? 'up' : p < std * 0.85 ? 'down' : '';
         const tip = [
           `${t}: ${(p * 100).toFixed(1)}% next roll (normal dice ${(std * 100).toFixed(1)}%)`,
           `rolled ${d.rolled[i]} time${d.rolled[i] === 1 ? '' : 's'} this game`,
           d.deckCounts ? `${d.deckCounts[i]} of ${DICE_FULL[i]} card${DICE_FULL[i] === 1 ? '' : 's'} left in the dice deck` : '',
         ].filter(Boolean).join('\n');
-        return `<div class="dcol ${t === 7 ? 'seven' : ''} ${p === 0 ? 'zero' : ''}" title="${esc(tip)}">
-            <div class="dpct ${rel}">${pct}</div>
-            <div class="dbarwrap" style="height:${H}px">
-              <div class="dbar" style="height:${Math.max(p > 0 ? 2 : 0, h)}px"></div>
-              <div class="dstd" style="bottom:${sh}px"></div>
-            </div>
-            <div class="dnum">${t}</div>
-          </div>`;
+        const cls = ['dit', t === 7 ? 'seven' : '', p === 0 ? 'zero' : '', p > 0 && Math.abs(p - topP) < 1e-12 ? 'top' : ''].join(' ');
+        return `<span class="${cls}" title="${esc(tip)}"><span class="dn">${t}</span><span class="dp ${rel}">${fmt(p)}</span></span>`;
       }).join('');
 
       const sevens = d.sevens.map((x) => {
@@ -403,7 +396,7 @@
         : `Deck ${d.cardsLeft}/36 · ${d.reshuffleIn === 0 ? 'refills before this roll' : `refills in ${d.reshuffleIn} roll${d.reshuffleIn === 1 ? '' : 's'}`}`;
 
       return `${head}
-        <div class="dchart">${cols}</div>
+        <div class="dlist">${items}</div>
         <div class="dfoot">
           <span class="ddeck">${deck}</span>
           ${d.sevens.length ? `<span class="d7"><span class="d7l">7s</span>${sevens}</span>` : ''}
