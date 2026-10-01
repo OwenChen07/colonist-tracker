@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Colonist Resource Tracker",
+  "short_name": "Card Tracker",
+  "version": "1.0.0",
+  "description": "Tracks every opponent's resource cards on colonist.io from the game log, including odds for hidden robber steals.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Colonist Resource Tracker — open a colonist.io game to see the overlay",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://colonist.io/*", "https://*.colonist.io/*"],
+      "js": ["src/parser.js", "src/tracker.js", "src/ui.js", "src/content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
+}

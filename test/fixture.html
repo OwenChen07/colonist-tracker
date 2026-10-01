@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Colonist fixture</title>
+<style>
+  body { margin: 0; font: 14px/1.3 Arial, sans-serif; background: #e9e1cf; height: 100vh; overflow: hidden; }
+  .board { position: absolute; left: 0; top: 0; right: 380px; bottom: 0; background: radial-gradient(circle at 45% 50%, #6aa7d6 0, #4b88bf 60%, #3a6f9f 100%); }
+  .board svg { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+  .side { position: absolute; right: 0; top: 0; width: 380px; bottom: 0; background: #fbf7ee; border-left: 2px solid #c9b994; display: flex; flex-direction: column; }
+  .players { padding: 8px; display: grid; gap: 6px; }
+  .informationWrapper-qC5Wi3J7 { display: flex; justify-content: space-between; background: #fff; border-radius: 8px; padding: 6px 10px; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+  .virtualScroller-lSkdkGJi { position: relative; overflow-y: auto; height: 320px; margin: 8px; background: #fff; border-radius: 8px; }
+  .virtualScroller-lSkdkGJi > .scrollItemContainer-q1 { position: absolute; top: 0; left: 0; right: 0; padding: 3px 8px; height: 30px; box-sizing: border-box; white-space: nowrap; overflow: hidden; }
+  .lobbyChatTextIcon { vertical-align: middle; height: 18px; }
+  .messagePart-x1 { display: flex; gap: 4px; align-items: center; }
+  .avatar-y2 { width: 0; height: 0; }
+</style>
+</head>
+<body>
+<div class="board"><svg width="420" height="420" viewBox="-210 -210 420 420" id="hexes"></svg></div>
+<div class="side">
+  <div class="players" id="players"></div>
+  <div class="virtualScroller-lSkdkGJi" id="log"><div class="spacer-z9" id="spacer"></div></div>
+</div>
+<script>
+  // hex board decoration
+  (function () {
+    const svg = document.getElementById('hexes');
+    const cols = ['#4f8c3a', '#b5553b', '#9ccf5c', '#e5c14a', '#8f8f8f', '#d8c08a'];
+    const R = 40, out = [];
+    let k = 0;
+    for (let q = -2; q <= 2; q++) for (let r = -2; r <= 2; r++) {
+      if (Math.abs(q + r) > 2) continue;
+      const x = R * Math.sqrt(3) * (q + r / 2), y = R * 1.5 * r;
+      const pts = [...Array(6)].map((_, i) => { const a = Math.PI / 180 * (60 * i - 30); return (x + R * Math.cos(a)).toFixed(1) + ',' + (y + R * Math.sin(a)).toFixed(1); }).join(' ');
+      out.push(`<polygon points="${pts}" fill="${cols[(k++ * 7) % 6]}" stroke="#f3e6c4" stroke-width="3"/>`);
+    }
+    svg.innerHTML = out.join('');
+  })();
+
+  // Minimal virtual list, like colonist's: only rows in view are in the DOM.
+  const ROW = 30, OVER = 4;
+  const log = document.getElementById('log'), spacer = document.getElementById('spacer');
+  window.rows = [];
+  function renderRows() {
+    const top = log.scrollTop, h = log.clientHeight;
+    const a = Math.max(0, Math.floor(top / ROW) - OVER), b = Math.min(rows.length - 1, Math.ceil((top + h) / ROW) + OVER);
+    const keep = new Set();
+    for (let i = a; i <= b; i++) keep.add(i);
+    for (const el of Array.from(log.querySelectorAll('[data-index]'))) {
+      const i = +el.dataset.index;
+      if (!keep.has(i)) el.remove(); else keep.delete(i);
+    }
+    for (const i of keep) {
+      const el = document.createElement('div');
+      el.className = 'scrollItemContainer-q1';
+      el.dataset.index = i;
+      el.style.transform = `translateY(${i * ROW}px)`;
+      el.innerHTML = rows[i];
+      log.appendChild(el);
+    }
+  }
+  log.addEventListener('scroll', renderRows);
+  window.pushRows = function (htmls) {
+    const atBottom = log.scrollTop + log.clientHeight >= log.scrollHeight - 5;
+    for (const h of htmls) rows.push(h);
+    spacer.style.height = rows.length * ROW + 'px';
+    if (atBottom) log.scrollTop = log.scrollHeight;
+    renderRows();
+  };
+  window.resetLog = function () {
+    rows = [];
+    spacer.style.height = '0px';
+    log.scrollTop = 0;
+    renderRows();
+  };
+  window.setPlayers = function (list) {
+    document.getElementById('players').innerHTML = list.map((p) =>
+      `<div class="informationWrapper-qC5Wi3J7">${p.self ? '<b>You</b>' : `<div class="username-M7Jbo6j0">${p.name}</div>`}<div class="count-Dh6MtdiN">${p.count}</div></div>`).join('');
+  };
+</script>
+</body>
+</html>
