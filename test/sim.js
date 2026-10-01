@@ -22,6 +22,9 @@
   function simulate(seed, opts) {
     opts = opts || {};
     const rand = rng(seed);
+    // opts.dice === 'balanced' rolls with colonist's balanced-dice controller (test/colonistDice.js)
+    const Ctrl = opts.dice === 'balanced' && (root.ColonistDice || (typeof require === 'function' ? require('./colonistDice.js') : null));
+    const diceCtrl = Ctrl ? new Ctrl.DiceControllerBalanced((opts.names || [0, 0, 0, 0]).length, { random: rand }) : null;
     const ri = (n) => Math.floor(rand() * n);
     const names = opts.names || ['Owen', 'Ana', 'Bram', 'Cleo'];
     const me = 0;
@@ -83,7 +86,13 @@
     const turns = opts.turns || 60;
     for (let t = 0; t < turns; t++) {
       const p = t % names.length;
-      const d1 = 1 + ri(6), d2 = 1 + ri(6);
+      let d1, d2;
+      if (diceCtrl) {
+        const pair = diceCtrl.throwDice(names[p]);
+        d1 = pair.dice1; d2 = pair.dice2;
+      } else {
+        d1 = 1 + ri(6); d2 = 1 + ri(6);
+      }
       emit(`${nameHtml(p)} rolled ${icon('dice_' + d1, 'dice_' + d1)} ${icon('dice_' + d2, 'dice_' + d2)}`);
       if (d1 + d2 === 7) {
         names.forEach((_, q) => {

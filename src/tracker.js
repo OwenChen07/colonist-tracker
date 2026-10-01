@@ -38,6 +38,7 @@
       this.freeRoads = null;
       this.events = 0;
       this.selfInferred = null;
+      this.dice = NS.DiceModel ? new NS.DiceModel() : null;
     }
 
     resolve(name) {
@@ -237,6 +238,10 @@
       switch (ev.type) {
         case 'roll':
           this.ensure(name('player'));
+          if (this.dice) {
+            if (ev.d1) this.dice.observe(name('player'), ev.d1, ev.d2);
+            else this.dice.skip(name('player'));
+          }
           break;
         case 'robber':
           this.lastRobber = name('player');
@@ -244,6 +249,7 @@
           break;
         case 'place':
           this.ensure(name('player'));
+          if (this.dice && ev.what === 'settlement') this.dice.notePlacement(name('player'));
           if (ev.what === 'road' && this.freeRoads && this.freeRoads.n > 0) this.freeRoads.n--;
           break;
         case 'delta':
@@ -367,7 +373,7 @@
           warn: m.warn.slice(),
         });
       }
-      return { players: out, worlds: this.worlds.length, events: this.events };
+      return { players: out, worlds: this.worlds.length, events: this.events, dice: this.dice ? this.dice.summary() : null };
     }
   }
 

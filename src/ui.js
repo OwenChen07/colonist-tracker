@@ -25,6 +25,7 @@
     ['dev', 'Dv', 'Development card'],
   ];
   const PREFS_KEY = 'crt:ui';
+  const DICE_FULL = [1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1];
 
   const CSS = `
   :host { all: initial; }
@@ -83,14 +84,42 @@
   .settings .act:hover { background: #efe7d6; }
   .unparsed { padding: 6px 10px 8px; max-width: 360px; color: #4b5563; font-size: 11px; border-top: 1px solid #e9e1cf; }
   .unparsed div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 1px 0; }
+  .dice { border-top: 1px solid #e9e1cf; padding: 4px 10px 8px; }
+  .dhead { display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 2px 0 4px; color: #4b5563; }
+  .dhead:hover .dtitle { color: #1f2328; }
+  .chev { width: 10px; color: #9aa0a8; font-size: 10px; }
+  .dtitle { flex: 1; font-size: 11px; }
+  .dtitle b { color: #1f2328; font-weight: 650; }
+  .dbadge { font-size: 10px; line-height: 15px; padding: 0 6px; border-radius: 8px; background: #e8f3ec; color: #24704a; cursor: help; }
+  .dbadge.rnd { background: #fff1d6; color: #9a5800; }
+  .dchart { display: flex; justify-content: center; gap: 3px; padding: 2px 0 0; }
+  .dcol { width: 24px; display: flex; flex-direction: column; align-items: center; cursor: help; }
+  .dpct { font-size: 9.5px; line-height: 12px; color: #6b7280; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .dpct.up { color: #24704a; font-weight: 650; }
+  .dpct.down { color: #a16207; }
+  .dbarwrap { position: relative; width: 16px; display: flex; align-items: flex-end; }
+  .dbar { width: 100%; background: #b88a4a; border-radius: 3px 3px 1px 1px; }
+  .dstd { position: absolute; left: -3px; right: -3px; height: 0; border-top: 1.5px solid rgba(31, 35, 40, 0.55); }
+  .dcol.seven .dbar { background: #d0392b; }
+  .dcol.zero .dpct, .dcol.zero .dnum { color: #c4c8cf; }
+  .dnum { font-size: 11px; font-weight: 650; color: #374151; padding-top: 2px; font-variant-numeric: tabular-nums; }
+  .dcol.seven .dnum { color: #c0392b; }
+  .dfoot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; padding-top: 5px; font-size: 10.5px; color: #6b7280; }
+  .d7 { display: inline-flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
+  .d7l { color: #c0392b; font-weight: 650; }
+  .s7 { white-space: nowrap; color: #374151; }
+  .mult { font-size: 10px; color: #6b7280; cursor: help; }
+  .mult.mhi { color: #24704a; font-weight: 600; }
+  .mult.mlo { color: #a16207; }
+  .mult.m0 { color: #b91c1c; font-weight: 600; }
   .hidden { display: none !important; }
   `;
 
   function loadPrefs() {
     try {
-      return Object.assign({ x: null, y: 90, collapsed: false, showSelf: true }, JSON.parse(localStorage.getItem(PREFS_KEY) || '{}'));
+      return Object.assign({ x: null, y: 90, collapsed: false, showSelf: true, showDice: true }, JSON.parse(localStorage.getItem(PREFS_KEY) || '{}'));
     } catch (e) {
-      return { x: null, y: 90, collapsed: false, showSelf: true };
+      return { x: null, y: 90, collapsed: false, showSelf: true, showDice: true };
     }
   }
   function savePrefs(p) {
@@ -126,6 +155,7 @@
           </div>
           <div class="body">
             <div class="content"></div>
+            <div class="dice hidden"></div>
             <div class="settings hidden"></div>
             <div class="unparsed hidden"></div>
             <div class="ftr"><span class="stat"></span><span class="extra"></span></div>
@@ -166,6 +196,10 @@
           this.h.onRescan && this.h.onRescan();
         } else if (act === 'reset') {
           this.h.onReset && this.h.onReset();
+        } else if (act === 'dice') {
+          this.prefs.showDice = !this.prefs.showDice;
+          savePrefs(this.prefs);
+          this.render(this.last);
         } else if (act === 'unparsed') {
           this.showUnparsed = !this.showUnparsed;
           this.render(this.last);
@@ -244,6 +278,9 @@
       this._set('.content', !s || !s.players.length
         ? `<div class="empty">${esc(model.status || 'Waiting for a game log…')}</div>`
         : this._table(model));
+      const showDice = !!(s && s.players.length && s.dice);
+      sr.querySelector('.dice').classList.toggle('hidden', !showDice);
+      if (showDice) this._set('.dice', this._dice(model));
 
       // settings
       const st = sr.querySelector('.settings');
@@ -305,6 +342,72 @@
         .map(([k, w]) => `${k}: ${pct(w)}`)
         .join('  ·  ');
       return `<span class="u" title="${esc(odds)}\nexpected ${c.exp.toFixed(1)}">${c.min}–${c.max}</span>`;
+    }
+
+    _who(name, model) {
+      if (!name) return '';
+      if (name === 'YOU' || (model.selfName && name === model.selfName)) return 'You';
+      return name;
+    }
+
+    _dice(model) {
+      const d = model.summary.dice;
+      const open = this.prefs.showDice;
+      const random = d.mode !== 'balanced';
+      const who = this._who(d.next, model);
+      const badge = d.mode === 'unreadable'
+        ? `<span class="dbadge rnd" title="${esc(`Roll ${d.brokenAt.roll}: ${d.brokenAt.reason}, so the dice deck can't be followed for this game. Showing normal two-dice odds.`)}">Dice not readable</span>`
+        : random
+        ? `<span class="dbadge rnd" title="${esc(`Not balanced dice: on roll ${d.brokenAt.roll} a ${d.brokenAt.total} came up, but ${d.brokenAt.reason}. Showing normal two-dice odds.`)}">Random dice</span>`
+        : `<span class="dbadge" title="colonist's balanced dice: a 36-card dice deck, refilled when fewer than 13 cards are left, with lower odds for numbers rolled in the last 5 rolls and 7s balanced between players.">Balanced dice</span>`;
+      const head = `<div class="dhead" data-a="dice" title="${open ? 'Hide' : 'Show'} dice odds">
+          <span class="chev">${open ? '▾' : '▸'}</span>
+          <span class="dtitle">Next roll${who ? ` · <b>${esc(who)}</b>` : ''}</span>
+          ${badge}
+        </div>`;
+      if (!open) return head;
+
+      const max = Math.max(0.17, ...d.odds);
+      const H = 46;
+      const cols = d.odds.map((p, i) => {
+        const t = i + 2;
+        const std = d.standard[i];
+        const h = Math.round((p / max) * H);
+        const sh = Math.round((std / max) * H);
+        const pct = p >= 0.0995 ? Math.round(p * 100) + '' : p > 0 ? (p * 100).toFixed(1).replace(/\.0$/, '') : '0';
+        const rel = p > std * 1.15 ? 'up' : p < std * 0.85 ? 'down' : '';
+        const tip = [
+          `${t}: ${(p * 100).toFixed(1)}% next roll (normal dice ${(std * 100).toFixed(1)}%)`,
+          `rolled ${d.rolled[i]} time${d.rolled[i] === 1 ? '' : 's'} this game`,
+          d.deckCounts ? `${d.deckCounts[i]} of ${DICE_FULL[i]} card${DICE_FULL[i] === 1 ? '' : 's'} left in the dice deck` : '',
+        ].filter(Boolean).join('\n');
+        return `<div class="dcol ${t === 7 ? 'seven' : ''} ${p === 0 ? 'zero' : ''}" title="${esc(tip)}">
+            <div class="dpct ${rel}">${pct}</div>
+            <div class="dbarwrap" style="height:${H}px">
+              <div class="dbar" style="height:${Math.max(p > 0 ? 2 : 0, h)}px"></div>
+              <div class="dstd" style="bottom:${sh}px"></div>
+            </div>
+            <div class="dnum">${t}</div>
+          </div>`;
+      }).join('');
+
+      const sevens = d.sevens.map((x) => {
+        const m = x.mult;
+        const cls = m === 0 ? 'm0' : m < 0.95 ? 'mlo' : m > 1.05 ? 'mhi' : '';
+        const mult = random ? '' : ` <span class="mult ${cls}" title="${esc(`${this._who(x.player, model)}'s 7 chance is ×${m.toFixed(2).replace(/0$/, '')} the deck's normal weight if they roll now`)}">×${(Math.round(m * 10) / 10).toFixed(1)}</span>`;
+        return `<span class="s7">${esc(this._who(x.player, model))} ${x.count}${mult}</span>`;
+      }).join('');
+
+      const deck = random
+        ? `${d.rolls} roll${d.rolls === 1 ? '' : 's'}`
+        : `Deck ${d.cardsLeft}/36 · ${d.reshuffleIn === 0 ? 'refills before this roll' : `refills in ${d.reshuffleIn} roll${d.reshuffleIn === 1 ? '' : 's'}`}`;
+
+      return `${head}
+        <div class="dchart">${cols}</div>
+        <div class="dfoot">
+          <span class="ddeck">${deck}</span>
+          ${d.sevens.length ? `<span class="d7"><span class="d7l">7s</span>${sevens}</span>` : ''}
+        </div>`;
     }
 
     _table(model) {

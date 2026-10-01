@@ -67,7 +67,9 @@
               if (r !== 'unknown' && !icons[r]) icons[r] = c.src || c.getAttribute('src');
             } else {
               const alt = (c.getAttribute('alt') || '').trim();
-              if (alt) out.push(' [' + alt.toLowerCase() + '] ');
+              const die = /dice_([1-6])\b/i.exec(alt) || /dice_([1-6])[._]/i.exec(c.getAttribute('src') || '');
+              if (die) out.push(' [dice_' + die[1] + '] ');
+              else if (alt) out.push(' [' + alt.toLowerCase() + '] ');
             }
           } else if (tag === 'BR' || tag === 'HR') {
             out.push(' ');
@@ -129,7 +131,15 @@
     let m;
 
     // ----- turn / robber / dev-card bookkeeping (no resource effect) -----
-    if ((m = /^(.+?) rolled\b/i.exec(text))) return { type: 'roll', player: cleanName(m[1]) };
+    if ((m = /^(.+?) rolled\b(.*)$/i.exec(text))) {
+      const d = [];
+      const re = /\[dice_([1-6])\]/g;
+      let k;
+      while ((k = re.exec(m[2])) && d.length < 2) d.push(+k[1]);
+      const ev = { type: 'roll', player: cleanName(m[1]) };
+      if (d.length === 2) { ev.d1 = d[0]; ev.d2 = d[1]; }
+      return ev;
+    }
     if ((m = /^(.+?) moved (the )?robber\b/i.exec(text))) return { type: 'robber', player: cleanName(m[1]) };
     if ((m = /^(.+?) used (.*)$/i.exec(text))) {
       const rest = m[2].toLowerCase();

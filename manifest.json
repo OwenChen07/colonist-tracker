@@ -20,7 +20,7 @@
   "content_scripts": [
     {
       "matches": ["https://colonist.io/*", "https://*.colonist.io/*"],
-      "js": ["src/parser.js", "src/tracker.js", "src/ui.js", "src/content.js"],
+      "js": ["src/parser.js", "src/dice.js", "src/tracker.js", "src/ui.js", "src/content.js"],
       "run_at": "document_idle",
       "all_frames": true
     }
