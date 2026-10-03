@@ -387,8 +387,11 @@
       const sevens = d.sevens.map((x) => {
         const m = x.mult;
         const cls = m === 0 ? 'm0' : m < 0.95 ? 'mlo' : m > 1.05 ? 'mhi' : '';
-        const mult = random ? '' : ` <span class="mult ${cls}" title="${esc(`${this._who(x.player, model)}'s 7 chance is ×${m.toFixed(2).replace(/0$/, '')} the deck's normal weight if they roll now`)}">×${(Math.round(m * 10) / 10).toFixed(1)}</span>`;
-        return `<span class="s7">${esc(this._who(x.player, model))} ${x.count}${mult}</span>`;
+        const who = this._who(x.player, model);
+        const tip = `${who === 'You' ? 'Your' : who + "'s"} chance of a 7 if ${who === 'You' ? 'you' : 'they'} rolled right now: ${(x.chance * 100).toFixed(1)}% (normal dice 16.7%).\n`
+          + `${who === 'You' ? 'You have' : who + ' has'} rolled ${x.count} of the 7s so far, so ${who === 'You' ? 'your' : 'their'} 7 is weighted ×${m.toFixed(2).replace(/0$/, '')}.`;
+        const chance = random ? '' : ` <span class="mult ${cls}" title="${esc(tip)}">${fmt(x.chance)}</span>`;
+        return `<span class="s7" title="${esc(`${who}: ${x.count} seven${x.count === 1 ? '' : 's'} rolled`)}">${esc(who)} ${x.count}${random ? '' : ' ·'}${chance}</span>`;
       }).join('');
 
       const deck = random

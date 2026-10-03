@@ -180,7 +180,13 @@
         cardsLeft: this.mode === 'balanced' ? (this.cardsLeft < CFG.minCardsBeforeReshuffle ? CFG.deckSize : this.cardsLeft) : null,
         deckCounts: this.mode === 'balanced' ? (this.cardsLeft < CFG.minCardsBeforeReshuffle ? FULL.slice() : this.counts.slice()) : null,
         reshuffleIn, // rolls until the deck is refilled (0 = refilled before the next roll)
-        sevens: players.map((p) => ({ player: p, count: this.sevens.get(p) || 0, mult: this.mode === 'balanced' ? this.sevenMultiplier(p) : 1 })),
+        // count = 7s rolled; mult = factor on their 7 weight; chance = odds of a 7 if they rolled right now
+        sevens: players.map((p) => ({
+          player: p,
+          count: this.sevens.get(p) || 0,
+          mult: this.mode === 'balanced' ? this.sevenMultiplier(p) : 1,
+          chance: this.predict(p)[I7],
+        })),
         streak: { ...this.streak },
       };
     }

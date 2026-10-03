@@ -41,8 +41,9 @@ game log and reproduces the exact odds, using colonist's balanced-dice rules:
   A number rolled 3 times in the last 5 can't come up next.
 - **7s are shared out.** A player who has rolled more than their share of 7s is less likely to
   roll another, and a run of 7s by one player lowers their odds and raises everyone else's. The
-  **7s** line shows each player's count and the multiplier on their 7 chance (×0 = they can't
-  roll a 7 right now, ×2 = double).
+  **7s** line shows, for each player, how many 7s they have rolled and their own chance of a 7
+  if they rolled right now (hover for the multiplier behind it). This is why the 7 in the list
+  changes from turn to turn even when no 7 is rolled: the list is for whoever rolls next.
 
 If a game isn't using balanced dice (custom rooms can switch to random dice, and bot games
 may too), sooner or later a roll happens that balanced dice can't produce. The panel then
