@@ -18,7 +18,7 @@ Works in any Chromium browser (Chrome, Edge, Brave, Arc).
 | Column | Meaning |
 |---|---|
 | Lumber, Brick, Wool, Grain, Ore | Cards in that player's hand. White = certain. **Amber `1–2`** = uncertain because of a hidden steal; hover it to see the odds of each count. |
-| Σ | Total resource cards. Red when 8 or more (they will discard on a 7). |
+| Σ | Total resource cards. Red when they would have to discard on a 7: 10 or more cards in 1v1, 8 or more in games with more players. |
 | Dev | Development cards bought and not yet played (includes hidden victory points). |
 | Can build | Road / Settlement / City / Dev card. Green = they can definitely afford it, amber outline = they might (hover for the %), grey = they can't. |
 

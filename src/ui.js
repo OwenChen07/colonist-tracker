@@ -408,6 +408,10 @@
 
     _table(model) {
       const s = model.summary;
+      // Cards that force a discard on a 7: colonist's 1v1 mode lets you hold 9 (discard at 10),
+      // games with more players use the standard limit of 7 (discard at 8).
+      const realPlayers = s.players.filter((p) => p.name !== 'YOU').length;
+      const discardAt = realPlayers === 2 ? 10 : 8;
       const icons = model.icons || {};
       const rows = s.players
         .filter((p) => this.prefs.showSelf || !p.isSelf)
@@ -430,7 +434,7 @@
           return `<tr class="${p.isSelf ? 'self' : ''}">
             <td class="name" title="${esc(nm)}"><span class="sw" style="background:${esc(color)}"></span>${esc(nm)}${p.isSelf ? ' <span class="you">(you)</span>' : ''}</td>
             ${p.res.map((c) => `<td>${this._cell(c)}</td>`).join('')}
-            <td class="tot ${T.max >= 8 ? 'hi' : ''}" title="${T.min >= 8 ? 'More than 7 cards: will discard on a 7' : 'Total resource cards'}">${this._cell(T, true)}${warn}</td>
+            <td class="tot ${T.max >= discardAt ? 'hi' : ''}" title="${T.min >= discardAt ? `${discardAt} or more cards: will discard on a 7` : T.max >= discardAt ? `May have ${discardAt} or more cards: would discard on a 7` : `Total resource cards (discards on a 7 at ${discardAt} or more)`}">${this._cell(T, true)}${warn}</td>
             <td class="dev" title="Development cards bought but not yet played${p.knights ? ` · ${p.knights} knight${p.knights > 1 ? 's' : ''} played` : ''}">${p.devHeld || '<span class="z">0</span>'}</td>
             <td><span class="chips">${chips}</span></td>
           </tr>`;
